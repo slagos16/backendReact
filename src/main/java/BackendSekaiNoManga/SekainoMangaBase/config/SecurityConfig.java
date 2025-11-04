@@ -1,6 +1,7 @@
 package BackendSekaiNoManga.SekainoMangaBase.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,11 +21,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final UserDetailsService customUserDetailsService; // tu CustomUserDetailsService
+  private final UserDetailsService customUserDetailsService;
 
   @Bean
   public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder(); // <- Bean requerido por DataSeed y AuthProvider
+    // si quieres menos “dureza”, baja el factor (por ejemplo 8)
+    return new BCryptPasswordEncoder(10);
   }
 
   @Bean
@@ -35,16 +37,31 @@ public class SecurityConfig {
     return p;
   }
 
-  @Bean
+    @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
       .csrf(csrf -> csrf.disable())
       .cors(Customizer.withDefaults())
       .authenticationProvider(daoAuthProvider())
       .authorizeHttpRequests(auth -> auth
-        .requestMatchers(HttpMethod.GET, "/api/mangas/**").permitAll() // catálogo público
-        .requestMatchers("/api/admin/**").hasRole("ADMIN")              // zona admin
+        // catálogo público
+        .requestMatchers(HttpMethod.GET, "/api/mangas/**").permitAll()
+
+        // registro público
+        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+
+        // resto de rutas de auth requieren estar autenticado (ej. change-password, me)
         .requestMatchers("/api/auth/**").authenticated()
+
+        // zona admin
+        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+        // swagger (opcional)
+        .requestMatchers(
+          "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**"
+        ).permitAll()
+
+        // todo lo demás se permite (ajústalo si quieres cerrar más)
         .anyRequest().permitAll()
       )
       .httpBasic(Customizer.withDefaults());

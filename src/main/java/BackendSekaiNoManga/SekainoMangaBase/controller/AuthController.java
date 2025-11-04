@@ -1,48 +1,42 @@
-
 package BackendSekaiNoManga.SekainoMangaBase.controller;
 
-import BackendSekaiNoManga.SekainoMangaBase.model.dto.UserSummaryDTO;
 import BackendSekaiNoManga.SekainoMangaBase.model.User;
-import BackendSekaiNoManga.SekainoMangaBase.repository.UserRepository;
-import org.springframework.http.HttpStatus;
+import BackendSekaiNoManga.SekainoMangaBase.model.dto.RegisterDTO;
+import BackendSekaiNoManga.SekainoMangaBase.model.dto.ChangePasswordDTO;
+import BackendSekaiNoManga.SekainoMangaBase.service.AuthService;
+import jakarta.validation.Valid;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
-    private final UserRepository users;
+  private final AuthService authService;
 
-    public AuthController(UserRepository users) {
-        this.users = users;
-    }
+  @PostMapping("/register")
+  public User register(@Valid @RequestBody RegisterDTO dto) {
+    return authService.register(dto);
+  }
 
-    @GetMapping("/me")
-    public UserSummaryDTO me(Authentication auth) {
-        if (auth == null || !auth.isAuthenticated()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
-        }
-        String email = auth.getName();
-        User u = users.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+  @PostMapping("/change-password")
+  public void changePassword(Authentication auth, @Valid @RequestBody ChangePasswordDTO dto) {
+    authService.changePassword(auth, dto);
+  }
 
-        return new UserSummaryDTO(
-                u.getId(),
-                u.getEmail(),
-                u.getNombre(),
-                u.getRoles().stream()
-                        // convertir SIEMPRE a String plano
-                        .map(r -> r.getName().toString())
-                        .collect(Collectors.toSet())
-        );
-    }
+  // Handy: ver identity actual
+  @GetMapping("/me")
+  public PrincipalDTO me(Authentication auth) {
+    PrincipalDTO dto = new PrincipalDTO();
+    dto.setUsername(auth != null ? auth.getName() : null);
+    return dto;
+  }
 
-    @PostMapping("/login")
-    public UserSummaryDTO login(Authentication auth) {
-        return me(auth);
-    }
+  @Data
+  static class PrincipalDTO {
+    private String username;
+  }
 }
