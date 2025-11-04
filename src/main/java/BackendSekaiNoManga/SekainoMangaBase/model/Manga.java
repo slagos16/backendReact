@@ -1,32 +1,35 @@
 package BackendSekaiNoManga.SekainoMangaBase.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-@Entity
-@Data
-@Table(name = "Manga")
-@NoArgsConstructor
-@AllArgsConstructor
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
+import java.math.BigDecimal;
+
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Entity @Table(name="mangas")
 public class Manga {
+  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer mangaId; 
-    
-    @Column(length = 50, nullable = false)
-    private String mangaName;  
-    
-    @Column(length = 50, nullable = false)
-    private Integer price;  
+  @NotBlank @Column(nullable=false, length=80)
+  private String mangaName;
 
-    @Column(length = 50, nullable = false)
-    private String publisher;  
-    
+  @NotNull @DecimalMin("0.0") @Column(nullable=false, precision=12, scale=2)
+  private BigDecimal price;
+
+  @NotBlank @Column(nullable=false, length=60)
+  private String publisher;
+
+  @NotNull @Min(0) @Column(nullable=false)
+  private Integer stock = 0;
+
+  private String portadaUrl;
+
+  @Enumerated(EnumType.STRING) @Column(nullable=false, length=20)
+  private Estado estado = Estado.ACTIVO; // ACTIVO/OCULTO/DESCONTINUADO
+
+  @Column(nullable=false)
+  private boolean eliminado = false;
+
+  public enum Estado { ACTIVO, OCULTO, DESCONTINUADO }
 }

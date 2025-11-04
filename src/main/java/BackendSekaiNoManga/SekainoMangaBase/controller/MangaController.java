@@ -1,102 +1,60 @@
 package BackendSekaiNoManga.SekainoMangaBase.controller;
 
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import BackendSekaiNoManga.SekainoMangaBase.model.Manga;
 import BackendSekaiNoManga.SekainoMangaBase.service.MangaService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-@RestController
-@RequestMapping("/api/v1/manga")
-@Tag(name = "Mangas", description = "Operaciones para administrar Mangas")
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
+
+@RestController 
+@RequiredArgsConstructor
+@Tag(name="Mangas Público")
+@RequestMapping("/api/mangas")
 public class MangaController {
-       @Autowired
-    private MangaService mangaService;
+  private final MangaService service;
 
-    @GetMapping()
-    @Operation(summary = "Listar todos los Mangas")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Manga encontrados"),
-        @ApiResponse(responseCode = "204", description = "No hay Mangaes registrados")
-    })
-    public ResponseEntity<List<Manga>> listMangaes() {
-        List<Manga> prods = mangaService.findAll();
-        if (prods.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(prods);
-    }
+  @Operation(summary="Listado catálogo (solo activos con stock)")
+  @GetMapping public List<Manga> all(@RequestParam(required=false) String publisher){
+    return service.listarPublico(publisher);
+  }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Obtener un Manga por su ID")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Manga encontrado"),
-        @ApiResponse(responseCode = "404", description = "Manga no encontrado")
-    })
-    public ResponseEntity<Manga> getMangaById(
-        @Parameter(description = "ID del Manga a buscar") @PathVariable Integer id) {
-        try {
-            Manga p = mangaService.findById(id);
-            return ResponseEntity.ok(p);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-    }
+  @Operation(summary="Detalle por ID")
+  @GetMapping("/{id}") public Manga byId(@PathVariable Long id){ return service.porId(id); }
 
-    @PostMapping()
-    @Operation(summary = "Crear un nuevo Manga")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Manga creado exitosamente")
-    })
-    public ResponseEntity<Manga> createManga(@RequestBody Manga manga) {
-        Manga created = mangaService.save(manga);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
-    }
+  @Operation(summary="Reservar stock (carrito)")
+  @PostMapping("/reservar-stock")
+  public ResponseEntity<Void> reservar(@RequestBody Map<Long,Integer> items){
+    service.reservarStock(items);
+    return ResponseEntity.ok().build();
+  }
+}
 
-    @PutMapping("/{id}")
-    @Operation(summary = "Actualizar un Manga existente")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Manga actualizado"),
-        @ApiResponse(responseCode = "404", description = "Manga no encontrado")
-    })
-    public ResponseEntity<Manga> updateManga(
-        @Parameter(description = "ID del Manga a actualizar") @PathVariable Integer id,
-        @RequestBody Manga manga) {
-        try {
-            Manga updated = mangaService.updateManga(id, manga);
-            return ResponseEntity.ok(updated);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-    }
+@RestController @RequiredArgsConstructor
+@Tag(name="Mangas Admin")
+@RequestMapping("/api/admin/mangas")
+class MangaAdminController {
+  private final MangaService service;
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Eliminar un Manga")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "204", description = "Manga eliminado"),
-        @ApiResponse(responseCode = "404", description = "Manga no encontrado")
-    })
-    public ResponseEntity<Void> deleteManga(
-        @Parameter(description = "ID del Manga a eliminar") @PathVariable Integer id) {
-        try {
-            mangaService.delete(id);
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-    }
+  @PostMapping public Manga create(@Valid @RequestBody Manga m){ return service.crear(m); }
+  @PutMapping("/{id}") public Manga update(@PathVariable Long id, @Valid @RequestBody Manga m){ return service.actualizar(id,m); }
+  @PatchMapping("/{id}/stock") public Manga patchStock(@PathVariable Long id, @RequestBody Map<String,Integer> body){ return service.patchStock(id, body.get("stock")); }
+  @PatchMapping("/{id}/estado") public Manga patchEstado(@PathVariable Long id, @RequestBody Map<String,String> body){
+    return service.patchEstado(id, Manga.Estado.valueOf(body.get("estado")));
+  }
+  @DeleteMapping("/{id}") public ResponseEntity<Void> delete(@PathVariable Long id){ service.softDelete(id); return ResponseEntity.noContent().build(); }
 }
