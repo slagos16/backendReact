@@ -1,50 +1,77 @@
 package BackendSekaiNoManga.SekainoMangaBase.config;
 
-import java.util.HashSet;
-import java.util.List;
-
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import BackendSekaiNoManga.SekainoMangaBase.model.Role;
 import BackendSekaiNoManga.SekainoMangaBase.model.User;
 import BackendSekaiNoManga.SekainoMangaBase.repository.RoleRepository;
 import BackendSekaiNoManga.SekainoMangaBase.repository.UserRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
-@Configuration
-public class DataSeed {
+import java.util.Optional;
 
-  @Bean
-  CommandLineRunner seed(RoleRepository roles, UserRepository users, PasswordEncoder pe) {
-    return args -> {
+@Component
+public class DataSeed implements CommandLineRunner {
 
-      // Crear roles si no existen (OJO: orElseGet recibe un Supplier -> lambda sin args que RETORNA el valor)
-      Role rAdmin = roles.findByName("ROLE_ADMIN")
-          .orElseGet(() -> roles.save(Role.builder().name("ROLE_ADMIN").build()));
+    private final RoleRepository roles;
+    private final UserRepository users;
+    private final PasswordEncoder encoder;
 
-      Role rUser  = roles.findByName("ROLE_USER")
-          .orElseGet(() -> roles.save(Role.builder().name("ROLE_USER").build()));
+    public DataSeed(RoleRepository roles, UserRepository users, PasswordEncoder encoder) {
+        this.roles = roles;
+        this.users = users;
+        this.encoder = encoder;
+    }
 
-      // Crear admin si no existe
-      users.findByEmail("admin@sekai.cl").orElseGet(() ->
-          users.save(User.builder()
-              .email("admin@sekai.cl")
-              .passwordHash(pe.encode("admin123"))
-              .roles(new HashSet<>(List.of(rAdmin, rUser)))
-              .enabled(true)
-              .build())
-      );
+    @Override
+    @Transactional
+    public void run(String... args) {
+        // 1) Roles base (idempotente)
+        Role rAdmin = roles.findByName("ROLE_ADMIN").orElseGet(() -> {
+            Role r = new Role();
+            r.setName("ROLE_ADMIN");
+            return roles.save(r);
+        });
 
-      // Crear usuario normal si no existe
-      users.findByEmail("user@sekai.cl").orElseGet(() ->
-          users.save(User.builder()
-              .email("user@sekai.cl")
-              .passwordHash(pe.encode("user123"))
-              .roles(new HashSet<>(List.of(rUser)))
-              .enabled(true)
-              .build())
-      );
-    };
-  }
+        Role rUser = roles.findByName("ROLE_USER").orElseGet(() -> {
+            Role r = new Role();
+            r.setName("ROLE_USER");
+            return roles.save(r);
+        });
+
+        // 2) Admin
+        User admin = users.findByEmail("admin@sekai.cl").orElseGet(() -> {
+            User u = new User();
+            u.setEmail("admin@sekai.cl");
+            u.setPasswordHash(encoder.encode("123456"));
+            u.setNombre("Administrador");
+            u.setTelefono("987654321");
+            u.setRegion("RM");
+            u.setComuna("Santiago");
+            u.setDireccion("Av. Siempre Viva 742");
+            u.setZip("8320000");
+            return users.save(u);
+        });
+        // asegurar roles (idempotente)
+        if (!admin.getRoles().contains(rAdmin)) admin.getRoles().add(rAdmin);
+        if (!admin.getRoles().contains(rUser))  admin.getRoles().add(rUser);
+        users.save(admin);
+
+        // 3) Usuario demo
+        User demo = users.findByEmail("user@sekai.cl").orElseGet(() -> {
+            User u = new User();
+            u.setEmail("user@sekai.cl");
+            u.setPasswordHash(encoder.encode("123456"));
+            u.setNombre("Usuario Demo");
+            u.setTelefono("912345678");
+            u.setRegion("RM");
+            u.setComuna("Providencia");
+            u.setDireccion("Calle Falsa 123");
+            u.setZip("7500000");
+            return users.save(u);
+        });
+        if (!demo.getRoles().contains(rUser)) demo.getRoles().add(rUser);
+        users.save(demo);
+    }
 }

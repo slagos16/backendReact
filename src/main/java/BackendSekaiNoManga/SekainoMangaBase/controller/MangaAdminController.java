@@ -1,7 +1,6 @@
 package BackendSekaiNoManga.SekainoMangaBase.controller;
 
 import BackendSekaiNoManga.SekainoMangaBase.model.Manga;
-import BackendSekaiNoManga.SekainoMangaBase.model.Manga.Estado;
 import BackendSekaiNoManga.SekainoMangaBase.model.dto.MangaCreateDTO;
 import BackendSekaiNoManga.SekainoMangaBase.model.dto.MangaStockUpdateDTO;
 import BackendSekaiNoManga.SekainoMangaBase.model.dto.MangaUpdateDTO;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/admin/mangas")
 @RequiredArgsConstructor
 public class MangaAdminController {
-
   private final MangaService mangaService;
 
   @PostMapping
@@ -35,7 +33,7 @@ public class MangaAdminController {
   }
 
   @PatchMapping("/{id}/estado")
-  public Manga patchEstado(@PathVariable Long id, @RequestParam Estado estado) {
+  public Manga patchEstado(@PathVariable Long id, @RequestParam Manga.Estado estado) {
     return mangaService.update(id, MangaUpdateDTO.builder().estado(estado).build());
   }
 
@@ -45,3 +43,4 @@ public class MangaAdminController {
     mangaService.delete(id);
   }
 }
+

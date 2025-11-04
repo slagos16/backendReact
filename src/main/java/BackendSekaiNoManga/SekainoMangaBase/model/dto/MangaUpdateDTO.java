@@ -25,5 +25,10 @@ public class MangaUpdateDTO {
 
   private String portadaUrl;
 
-  private Estado estado; 
+  private Estado estado;
+
+  public Object getVolumen() {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'getVolumen'");
+  } 
 }

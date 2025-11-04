@@ -12,14 +12,33 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class MangaService {
 
   private final MangaRepository repo;
 
-  /* ===== CRUD ADMIN ===== */
+  /* ===== PÚBLICO ===== */
+  @Transactional(readOnly = true)
+  public List<Manga> findAllPublic(String q) {
+    var all = repo.findByEliminadoFalseAndEstadoAndStockGreaterThan(Manga.Estado.ACTIVO, 0);
+    if (q == null || q.isBlank()) return all;
+    String k = q.toLowerCase();
+    return all.stream()
+      .filter(m -> m.getMangaName().toLowerCase().contains(k) || m.getPublisher().toLowerCase().contains(k))
+      .toList();
+  }
 
+  @Transactional(readOnly = true)
+  public Manga findPublicById(Long id) {
+    return repo.findById(id)
+      .filter(m -> !m.isEliminado() && m.getEstado() == Manga.Estado.ACTIVO && m.getStock() > 0)
+      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Manga no existe o no disponible: " + id));
+  }
+
+  /* ===== CRUD ADMIN ===== */
   @Transactional
   public Manga create(MangaCreateDTO dto) {
     Manga m = new Manga();
@@ -28,30 +47,28 @@ public class MangaService {
     m.setPublisher(dto.getPublisher());
     m.setStock(dto.getStock());
     m.setPortadaUrl(dto.getPortadaUrl());
-    m.setEstado(Estado.ACTIVO);
+    m.setEstado(Manga.Estado.ACTIVO);
     m.setEliminado(false);
     return repo.save(m);
   }
 
   @Transactional
   public Manga update(Long id, MangaUpdateDTO dto) {
-    Manga m = repo.findById(id)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Manga no existe: " + id));
-
+    Manga m = repo.findById(id).orElseThrow(() ->
+      new ResponseStatusException(HttpStatus.NOT_FOUND, "Manga no existe: " + id));
     if (dto.getMangaName() != null) m.setMangaName(dto.getMangaName());
-    if (dto.getPrice() != null)      m.setPrice(dto.getPrice());
-    if (dto.getPublisher() != null)  m.setPublisher(dto.getPublisher());
-    if (dto.getStock() != null)      m.setStock(dto.getStock());
+    if (dto.getPrice() != null) m.setPrice(dto.getPrice());
+    if (dto.getPublisher() != null) m.setPublisher(dto.getPublisher());
+    if (dto.getStock() != null) m.setStock(dto.getStock());
     if (dto.getPortadaUrl() != null) m.setPortadaUrl(dto.getPortadaUrl());
-    if (dto.getEstado() != null)     m.setEstado(dto.getEstado());
-
+    if (dto.getEstado() != null) m.setEstado(dto.getEstado());
     return repo.save(m);
   }
 
   @Transactional
   public Manga updateStock(Long id, int newStock) {
-    Manga m = repo.findById(id)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Manga no existe: " + id));
+    Manga m = repo.findById(id).orElseThrow(() ->
+      new ResponseStatusException(HttpStatus.NOT_FOUND, "Manga no existe: " + id));
     if (newStock < 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "stock inválido");
     m.setStock(newStock);
     return repo.save(m);
@@ -59,38 +76,9 @@ public class MangaService {
 
   @Transactional
   public void delete(Long id) {
-    Manga m = repo.findById(id)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Manga no existe: " + id));
-    m.setEliminado(true); // borrado lógico
+    Manga m = repo.findById(id).orElseThrow(() ->
+      new ResponseStatusException(HttpStatus.NOT_FOUND, "Manga no existe: " + id));
+    m.setEliminado(true);
     repo.save(m);
-  }
-
-  /* ===== Carrito / Stock ===== */
-
-  @Transactional
-  public void reservarStock(CartRequest cart) {
-    for (var it : cart.getItems()) {
-      int updated = repo.tryDecrementStock(it.getMangaId(), it.getQty());
-      if (updated == 0) {
-        // si cualquiera falla, se hace rollback de toda la transacción
-        throw new ResponseStatusException(
-            HttpStatus.CONFLICT,
-            "Sin stock suficiente para mangaId=" + it.getMangaId()
-        );
-      }
-    }
-  }
-
-  @Transactional
-  public void liberarStock(CartRequest cart) {
-    for (var it : cart.getItems()) {
-      repo.incrementStock(it.getMangaId(), it.getQty());
-    }
-  }
-
-  @Transactional
-  public void checkout(CartRequest cart) {
-    // por ahora es igual a reservar; más adelante crea Orden/Pago
-    reservarStock(cart);
   }
 }

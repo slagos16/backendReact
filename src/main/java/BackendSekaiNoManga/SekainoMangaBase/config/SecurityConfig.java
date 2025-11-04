@@ -1,49 +1,67 @@
 package BackendSekaiNoManga.SekainoMangaBase.config;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.*;
-import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.crypto.bcrypt.*;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-@EnableMethodSecurity
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final CustomUserDetailsService uds;   // ← inyectamos tu servicio
-
-  @Bean PasswordEncoder passwordEncoder(){ return new BCryptPasswordEncoder(); }
+  private final UserDetailsService customUserDetailsService; // tu CustomUserDetailsService
 
   @Bean
-  DaoAuthenticationProvider authProvider() {
-    var p = new DaoAuthenticationProvider();
-    p.setUserDetailsService(uds);
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder(); // <- Bean requerido por DataSeed y AuthProvider
+  }
+
+  @Bean
+  public DaoAuthenticationProvider daoAuthProvider() {
+    DaoAuthenticationProvider p = new DaoAuthenticationProvider();
+    p.setUserDetailsService(customUserDetailsService);
     p.setPasswordEncoder(passwordEncoder());
     return p;
   }
 
   @Bean
-  AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
-    return cfg.getAuthenticationManager();
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+      .csrf(csrf -> csrf.disable())
+      .cors(Customizer.withDefaults())
+      .authenticationProvider(daoAuthProvider())
+      .authorizeHttpRequests(auth -> auth
+        .requestMatchers(HttpMethod.GET, "/api/mangas/**").permitAll() // catálogo público
+        .requestMatchers("/api/admin/**").hasRole("ADMIN")              // zona admin
+        .requestMatchers("/api/auth/**").authenticated()
+        .anyRequest().permitAll()
+      )
+      .httpBasic(Customizer.withDefaults());
+
+    return http.build();
   }
 
   @Bean
-  SecurityFilterChain security(HttpSecurity http) throws Exception {
-    http.csrf(csrf -> csrf.disable());
-    http.headers(h -> h.frameOptions(f -> f.disable())); // H2 console
-    http.authenticationProvider(authProvider());
-    http.authorizeHttpRequests(auth -> auth
-        .requestMatchers("/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html","/h2-console/**","/api/mangas/**").permitAll()
-        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-        .anyRequest().authenticated()
-    );
-    http.httpBasic(); // Basic Auth
-    return http.build();
+  public WebMvcConfigurer corsConfigurer() {
+    return new WebMvcConfigurer() {
+      @Override
+      public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+          .allowedOrigins("http://localhost:3000", "http://localhost:5173")
+          .allowedMethods("*")
+          .allowCredentials(true);
+      }
+    };
   }
 }
