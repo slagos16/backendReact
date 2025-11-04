@@ -7,7 +7,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import BackendSekaiNoManga.SekainoMangaBase.model.Role;
 import BackendSekaiNoManga.SekainoMangaBase.model.User;
 import BackendSekaiNoManga.SekainoMangaBase.repository.RoleRepository;
@@ -20,14 +19,14 @@ public class DataSeed {
   CommandLineRunner seed(RoleRepository roles, UserRepository users, PasswordEncoder pe) {
     return args -> {
 
-      // Crea roles si no existen
+      // Crear roles si no existen (OJO: orElseGet recibe un Supplier -> lambda sin args que RETORNA el valor)
       Role rAdmin = roles.findByName("ROLE_ADMIN")
           .orElseGet(() -> roles.save(Role.builder().name("ROLE_ADMIN").build()));
 
       Role rUser  = roles.findByName("ROLE_USER")
           .orElseGet(() -> roles.save(Role.builder().name("ROLE_USER").build()));
 
-      // Crea admin si no existe
+      // Crear admin si no existe
       users.findByEmail("admin@sekai.cl").orElseGet(() ->
           users.save(User.builder()
               .email("admin@sekai.cl")
@@ -37,7 +36,7 @@ public class DataSeed {
               .build())
       );
 
-      // Crea usuario normal si no existe
+      // Crear usuario normal si no existe
       users.findByEmail("user@sekai.cl").orElseGet(() ->
           users.save(User.builder()
               .email("user@sekai.cl")

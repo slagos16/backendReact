@@ -8,6 +8,13 @@ import java.math.BigDecimal;
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 @Entity @Table(name="mangas")
 public class Manga {
+
+    @PrePersist
+    public void prePersist() {
+    if (estado == null) estado = Estado.ACTIVO;
+    if (stock == null) stock = 0;
+}
+
   @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
