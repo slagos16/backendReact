@@ -5,14 +5,18 @@ import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -21,64 +25,83 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final UserDetailsService customUserDetailsService;
-
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    // si quieres menos “dureza”, baja el factor (por ejemplo 8)
-    return new BCryptPasswordEncoder(10);
-  }
-
-  @Bean
-  public DaoAuthenticationProvider daoAuthProvider() {
-    DaoAuthenticationProvider p = new DaoAuthenticationProvider();
-    p.setUserDetailsService(customUserDetailsService);
-    p.setPasswordEncoder(passwordEncoder());
-    return p;
-  }
+    private final UserDetailsService customUserDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-      .csrf(csrf -> csrf.disable())
-      .cors(Customizer.withDefaults())
-      .authenticationProvider(daoAuthProvider())
-      .authorizeHttpRequests(auth -> auth
-        // catálogo público
-        .requestMatchers(HttpMethod.GET, "/api/mangas/**").permitAll()
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(10);
+    }
 
-        // registro público
-        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+    @Bean
+    public DaoAuthenticationProvider daoAuthProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(customUserDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
 
-        // resto de rutas de auth requieren estar autenticado (ej. change-password, me)
-        .requestMatchers("/api/auth/**").authenticated()
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
 
-        // zona admin
-        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .cors(Customizer.withDefaults())
+            .sessionManagement(sm ->
+                sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            .authenticationProvider(daoAuthProvider())
+            .authorizeHttpRequests(auth -> auth
+                // recursos estáticos
+                .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
 
-        // swagger (opcional)
-        .requestMatchers(
-          "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**"
-        ).permitAll()
+                // swagger / openapi
+                .requestMatchers(
+                    "/v3/api-docs/**",
+                    "/swagger-ui.html",
+                    "/swagger-ui/**"
+                ).permitAll()
 
-        // todo lo demás se permite (ajústalo si quieres cerrar más)
-        .anyRequest().permitAll()
-      )
-      .httpBasic(Customizer.withDefaults());
+                // auth pública
+                .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
 
-    return http.build();
-  }
+                // catálogo público
+                .requestMatchers(HttpMethod.GET, "/api/mangas/**").permitAll()
 
-  @Bean
-  public WebMvcConfigurer corsConfigurer() {
-    return new WebMvcConfigurer() {
-      @Override
-      public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-          .allowedOrigins("http://localhost:3000", "http://localhost:5173")
-          .allowedMethods("*")
-          .allowCredentials(true);
-      }
-    };
-  }
+                // resto de /api/auth/** requiere login (ej: /me, /change-password)
+                .requestMatchers("/api/auth/**").authenticated()
+
+                // zona de administración
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                // cualquier otra request autenticada
+                .anyRequest().authenticated()
+            );
+
+        // DESACTIVAMOS BASIC → solo JWT
+        http.httpBasic(httpBasic -> httpBasic.disable());
+
+        // Filtro JWT antes del UsernamePasswordAuthenticationFilter
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                    .allowedOrigins("http://localhost:3000", "http://localhost:5173")
+                    .allowedMethods("*")
+                    .allowCredentials(true);
+            }
+        };
+    }
 }

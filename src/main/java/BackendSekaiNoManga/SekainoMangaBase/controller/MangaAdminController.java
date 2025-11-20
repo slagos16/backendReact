@@ -7,6 +7,9 @@ import BackendSekaiNoManga.SekainoMangaBase.model.dto.MangaUpdateDTO;
 import BackendSekaiNoManga.SekainoMangaBase.service.MangaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,6 +44,14 @@ public class MangaAdminController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable Long id) {
     mangaService.delete(id);
+  }
+  @PostMapping("/upload-json")
+  @ResponseStatus(HttpStatus.CREATED)
+  public List<Manga> uploadMassive(@RequestBody List<@Valid MangaCreateDTO> dtos) {
+      // Iteramos y guardamos cada manga usando el servicio existente
+      return dtos.stream()
+          .map(mangaService::create)
+          .toList();
   }
 }
 
