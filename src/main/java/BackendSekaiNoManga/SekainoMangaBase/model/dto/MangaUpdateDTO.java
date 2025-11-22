@@ -6,10 +6,9 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
-
-@Data 
-@NoArgsConstructor 
-@AllArgsConstructor 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class MangaUpdateDTO {
 
@@ -26,9 +25,11 @@ public class MangaUpdateDTO {
   private String portadaUrl;
 
   private Estado estado;
+  private String author;
+  private String description;
 
   public Object getVolumen() {
     // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unimplemented method 'getVolumen'");
-  } 
+  }
 }

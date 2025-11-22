@@ -63,6 +63,8 @@ public class MangaService {
     m.setPortadaUrl(dto.getPortadaUrl());
     m.setEstado(Manga.Estado.ACTIVO);
     m.setEliminado(false);
+    m.setAuthor(dto.getAuthor());
+    m.setDescription(dto.getDescription());
     return repo.save(m);
   }
 
@@ -82,6 +84,10 @@ public class MangaService {
       m.setPortadaUrl(dto.getPortadaUrl());
     if (dto.getEstado() != null)
       m.setEstado(dto.getEstado());
+    if (dto.getAuthor() != null)
+      m.setAuthor(dto.getAuthor());
+    if (dto.getDescription() != null)
+      m.setDescription(dto.getDescription());
     return repo.save(m);
   }
 
