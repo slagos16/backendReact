@@ -27,9 +27,7 @@ public class MangaUpdateDTO {
   private Estado estado;
   private String author;
   private String description;
-
-  public Object getVolumen() {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'getVolumen'");
-  }
+  private String genre;
+  private Boolean onSale;
+  private Boolean topSelling;
 }

@@ -49,39 +49,44 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .cors(Customizer.withDefaults())
-            .sessionManagement(sm ->
-                sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authenticationProvider(daoAuthProvider())
-            .authorizeHttpRequests(auth -> auth
-                // recursos estáticos
-                .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+                .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(daoAuthProvider())
+                .authorizeHttpRequests(auth -> auth
+                        // recursos estáticos
+                        .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
 
-                // swagger / openapi
-                .requestMatchers(
-                    "/v3/api-docs/**",
-                    "/swagger-ui.html",
-                    "/swagger-ui/**"
-                ).permitAll()
+                        // swagger / openapi
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**")
+                        .permitAll()
 
-                // auth pública
-                .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                        // auth pública
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
 
-                // catálogo público
-                .requestMatchers(HttpMethod.GET, "/api/mangas/**").permitAll()
+                        // catálogo público
+                        .requestMatchers(HttpMethod.GET, "/api/mangas/**").permitAll()
 
-                // resto de /api/auth/** requiere login (ej: /me, /change-password)
-                .requestMatchers("/api/auth/**").authenticated()
+                        // resto de /api/auth/** requiere login (ej: /me, /change-password)
+                        .requestMatchers("/api/auth/**").authenticated()
 
-                // zona de administración
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // zona de administración
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/orders").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/orders/me").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/orders/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/orders").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/orders/me").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/orders/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/users/me").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/me").hasAnyRole("USER", "ADMIN")
 
-                // cualquier otra request autenticada
-                .anyRequest().authenticated()
-            );
+                        // cualquier otra request autenticada
+                        .anyRequest().authenticated());
 
         // DESACTIVAMOS BASIC → solo JWT
         http.httpBasic(httpBasic -> httpBasic.disable());
@@ -98,9 +103,9 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                    .allowedOrigins("http://localhost:3000", "http://localhost:5173")
-                    .allowedMethods("*")
-                    .allowCredentials(true);
+                        .allowedOrigins("http://localhost:3000", "http://localhost:5173")
+                        .allowedMethods("*")
+                        .allowCredentials(true);
             }
         };
     }

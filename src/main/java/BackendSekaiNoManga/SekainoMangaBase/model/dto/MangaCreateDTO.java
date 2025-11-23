@@ -27,4 +27,7 @@ public class MangaCreateDTO {
   private String portadaUrl;
   private String author;
   private String description;
+  private String genre;
+  private Boolean onSale;
+  private Boolean topSelling;
 }

@@ -58,6 +58,15 @@ public class Manga {
   @Column(columnDefinition = "TEXT")
   private String description;
 
+  @Column(length = 50)
+  private String genre; // 👈 NUEVO
+
+  @Column(name = "on_sale", nullable = false)
+  private boolean onSale = false; // 👈 NUEVO
+
+  @Column(name = "top_selling", nullable = false)
+  private boolean topSelling = false;
+
   public enum Estado {
     ACTIVO, OCULTO, DESCONTINUADO
   }

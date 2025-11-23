@@ -36,7 +36,7 @@ public class AuthController {
 
   @PostMapping("/change-password")
   public void changePassword(Authentication auth,
-                             @Valid @RequestBody ChangePasswordDTO dto) {
+      @Valid @RequestBody ChangePasswordDTO dto) {
     authService.changePassword(auth, dto);
   }
 
@@ -44,30 +44,28 @@ public class AuthController {
   @PostMapping("/login")
   public LoginResponse login(@RequestBody LoginRequest req) {
     User u = users.findByEmail(req.getEmail())
-      .orElseThrow(() -> new ResponseStatusException(
-        HttpStatus.UNAUTHORIZED, "Credenciales inválidas"
-      ));
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.UNAUTHORIZED, "Credenciales inválidas"));
 
     if (!passwordEncoder.matches(req.getPassword(), u.getPasswordHash())) {
-    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas");
-  }
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas");
+    }
 
-  UserDetails userDetails = org.springframework.security.core.userdetails.User
-    .withUsername(u.getEmail())
-    // aquí también usamos el hash que ya está en la BD
-    .password(u.getPasswordHash())
-    .authorities(u.getRoles().stream().map(Role::getName).toArray(String[]::new))
-    .build();
+    UserDetails userDetails = org.springframework.security.core.userdetails.User
+        .withUsername(u.getEmail())
+        // aquí también usamos el hash que ya está en la BD
+        .password(u.getPasswordHash())
+        .authorities(u.getRoles().stream().map(Role::getName).toArray(String[]::new))
+        .build();
 
     String token = jwtService.generateToken(userDetails);
 
     return new LoginResponse(
-      token,
-      u.getId(),
-      u.getEmail(),
-      u.getNombre(),
-      u.getRoles().stream().map(Role::getName).toList()
-    );
+        token,
+        u.getId(),
+        u.getEmail(),
+        u.getNombre(),
+        u.getRoles().stream().map(Role::getName).toList());
   }
 
   // === /me usando el Authentication seteado por el filtro JWT ===
@@ -78,9 +76,8 @@ public class AuthController {
     }
 
     User u = users.findByEmail(auth.getName())
-      .orElseThrow(() -> new ResponseStatusException(
-        HttpStatus.NOT_FOUND, "Usuario no encontrado"
-      ));
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
     MeDTO dto = new MeDTO();
     dto.setId(u.getId());
@@ -98,12 +95,11 @@ public class AuthController {
   }
 
   public record LoginResponse(
-    String token,
-    Long id,
-    String email,
-    String nombre,
-    List<String> roles
-  ) {
+      String token,
+      Long id,
+      String email,
+      String nombre,
+      List<String> roles) {
   }
 
   @Data

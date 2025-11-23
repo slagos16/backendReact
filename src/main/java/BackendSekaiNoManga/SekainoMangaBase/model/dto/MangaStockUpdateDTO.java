@@ -4,8 +4,11 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-@Data @NoArgsConstructor @AllArgsConstructor
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class MangaStockUpdateDTO {
-  @NotNull @Min(0)
+  @NotNull
+  @Min(0)
   private Integer stock;
 }

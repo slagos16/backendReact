@@ -50,12 +50,14 @@ public class DataSeed implements CommandLineRunner {
             u.setRegion("RM");
             u.setComuna("Santiago");
             u.setDireccion("Av. Siempre Viva 742");
-            u.setZip("8320000");
+            u.setCodigoPostal("8320000");
             return users.save(u);
         });
         // asegurar roles (idempotente)
-        if (!admin.getRoles().contains(rAdmin)) admin.getRoles().add(rAdmin);
-        if (!admin.getRoles().contains(rUser))  admin.getRoles().add(rUser);
+        if (!admin.getRoles().contains(rAdmin))
+            admin.getRoles().add(rAdmin);
+        if (!admin.getRoles().contains(rUser))
+            admin.getRoles().add(rUser);
         users.save(admin);
 
         // 3) Usuario demo
@@ -68,10 +70,11 @@ public class DataSeed implements CommandLineRunner {
             u.setRegion("RM");
             u.setComuna("Providencia");
             u.setDireccion("Calle Falsa 123");
-            u.setZip("7500000");
+            u.setCodigoPostal("7500000");
             return users.save(u);
         });
-        if (!demo.getRoles().contains(rUser)) demo.getRoles().add(rUser);
+        if (!demo.getRoles().contains(rUser))
+            demo.getRoles().add(rUser);
         users.save(demo);
     }
 }

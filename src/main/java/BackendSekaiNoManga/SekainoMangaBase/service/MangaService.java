@@ -56,38 +56,70 @@ public class MangaService {
   @Transactional
   public Manga create(MangaCreateDTO dto) {
     Manga m = new Manga();
-    m.setMangaName(dto.getMangaName());
+    m.setMangaName(dto.getMangaName().trim());
     m.setPrice(dto.getPrice());
-    m.setPublisher(dto.getPublisher());
+    m.setPublisher(dto.getPublisher().trim());
     m.setStock(dto.getStock());
     m.setPortadaUrl(dto.getPortadaUrl());
+
+    m.setAuthor(dto.getAuthor() != null ? dto.getAuthor().trim() : "Autor desconocido");
+    m.setDescription(dto.getDescription() != null ? dto.getDescription().trim() : "");
+    m.setGenre(dto.getGenre() != null && !dto.getGenre().isBlank()
+        ? dto.getGenre().trim()
+        : "Sin género");
+
+    if (dto.getOnSale() != null) {
+      m.setOnSale(dto.getOnSale());
+    }
+    if (dto.getTopSelling() != null) {
+      m.setTopSelling(dto.getTopSelling());
+    }
+
     m.setEstado(Manga.Estado.ACTIVO);
     m.setEliminado(false);
-    m.setAuthor(dto.getAuthor());
-    m.setDescription(dto.getDescription());
+
     return repo.save(m);
   }
 
   @Transactional
   public Manga update(Long id, MangaUpdateDTO dto) {
     Manga m = repo.findById(id)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Manga no existe: " + id));
-    if (dto.getMangaName() != null)
-      m.setMangaName(dto.getMangaName());
-    if (dto.getPrice() != null)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Manga no encontrado"));
+
+    if (dto.getMangaName() != null) {
+      m.setMangaName(dto.getMangaName().trim());
+    }
+    if (dto.getPrice() != null) {
       m.setPrice(dto.getPrice());
-    if (dto.getPublisher() != null)
-      m.setPublisher(dto.getPublisher());
-    if (dto.getStock() != null)
+    }
+    if (dto.getPublisher() != null) {
+      m.setPublisher(dto.getPublisher().trim());
+    }
+    if (dto.getStock() != null) {
       m.setStock(dto.getStock());
-    if (dto.getPortadaUrl() != null)
-      m.setPortadaUrl(dto.getPortadaUrl());
-    if (dto.getEstado() != null)
+    }
+    if (dto.getPortadaUrl() != null) {
+      m.setPortadaUrl(dto.getPortadaUrl().trim());
+    }
+    if (dto.getAuthor() != null) {
+      m.setAuthor(dto.getAuthor().trim());
+    }
+    if (dto.getDescription() != null) {
+      m.setDescription(dto.getDescription().trim());
+    }
+    if (dto.getGenre() != null) {
+      m.setGenre(dto.getGenre().trim());
+    }
+    if (dto.getOnSale() != null) {
+      m.setOnSale(dto.getOnSale());
+    }
+    if (dto.getTopSelling() != null) {
+      m.setTopSelling(dto.getTopSelling());
+    }
+    if (dto.getEstado() != null) {
       m.setEstado(dto.getEstado());
-    if (dto.getAuthor() != null)
-      m.setAuthor(dto.getAuthor());
-    if (dto.getDescription() != null)
-      m.setDescription(dto.getDescription());
+    }
+
     return repo.save(m);
   }
 

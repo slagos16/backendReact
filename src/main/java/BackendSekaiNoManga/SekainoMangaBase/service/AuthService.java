@@ -36,13 +36,14 @@ public class AuthService {
     u.setNombre(dto.getNombre());
     u.setEnabled(true);
     u.setPasswordHash(encoder.encode(dto.getPassword()));
-    users.save(u);
 
+    // Asignar rol USER por defecto
     Role rUser = roles.findByName("ROLE_USER")
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Falta ROLE_USER"));
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.INTERNAL_SERVER_ERROR, "Falta ROLE_USER"));
     u.getRoles().add(rUser);
 
-    return u;
+    return users.save(u); // guardar con rol incluido
   }
 
   @Transactional
@@ -62,7 +63,8 @@ public class AuthService {
     users.save(u);
   }
 
-  // Helper opcional: crear admin extra (protegido por ROLE_ADMIN desde el controller)
+  // Helper opcional: crear admin extra (protegido por ROLE_ADMIN desde el
+  // controller)
   @Transactional
   public User createAdmin(String email, String rawPassword, String nombre) {
     if (users.existsByEmail(email)) {

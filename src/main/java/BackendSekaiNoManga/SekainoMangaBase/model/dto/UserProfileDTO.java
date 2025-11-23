@@ -9,15 +9,18 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterRequest {
-    @NotBlank
-    @Email
-    private String email;
+public class UserProfileDTO {
 
+    @Email
     @NotBlank
-    private String password;
+    private String email; // solo lectura en el update, pero lo devolvemos
 
     @NotBlank
     private String nombre;
 
+    private String comuna;
+    private String direccion;
+    private String region;
+    private String telefono;
+    private String codigoPostal;
 }
