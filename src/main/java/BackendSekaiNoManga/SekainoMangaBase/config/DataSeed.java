@@ -9,8 +9,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-
 @Component
 public class DataSeed implements CommandLineRunner {
 
@@ -44,7 +42,7 @@ public class DataSeed implements CommandLineRunner {
         User admin = users.findByEmail("admin@sekai.cl").orElseGet(() -> {
             User u = new User();
             u.setEmail("admin@sekai.cl");
-            u.setPasswordHash(encoder.encode("123456"));
+            u.setPasswordHash(encoder.encode("123456."));
             u.setNombre("Administrador");
             u.setTelefono("987654321");
             u.setRegion("RM");
@@ -65,7 +63,7 @@ public class DataSeed implements CommandLineRunner {
             User u = new User();
             u.setEmail("user@sekai.cl");
             u.setPasswordHash(encoder.encode("123456"));
-            u.setNombre("Usuario Demo");
+            u.setNombre("Usuario de prueba");
             u.setTelefono("912345678");
             u.setRegion("RM");
             u.setComuna("Providencia");

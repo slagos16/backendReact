@@ -1,8 +1,6 @@
 package BackendSekaiNoManga.SekainoMangaBase.service;
 
 import BackendSekaiNoManga.SekainoMangaBase.model.Manga;
-import BackendSekaiNoManga.SekainoMangaBase.model.Manga.Estado;
-import BackendSekaiNoManga.SekainoMangaBase.model.dto.CartRequest;
 import BackendSekaiNoManga.SekainoMangaBase.model.dto.MangaCreateDTO;
 import BackendSekaiNoManga.SekainoMangaBase.model.dto.MangaUpdateDTO;
 import BackendSekaiNoManga.SekainoMangaBase.repository.MangaRepository;
